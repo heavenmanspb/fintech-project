@@ -104,22 +104,25 @@ export class TransactionService {
       })
       .getMany();
 
-    const hashMap = transactions.reduce((accumulator, transaction) => {
-      if (accumulator[transaction.from])
-        accumulator[transaction.from] -= BigInt(transaction.value);
-      else accumulator[transaction.from] = -BigInt(transaction.value);
+    const hashMap = transactions.reduce<Record<string, bigint>>(
+      (accumulator, transaction) => {
+        if (accumulator[transaction.from])
+          accumulator[transaction.from] -= BigInt(transaction.value);
+        else accumulator[transaction.from] = -BigInt(transaction.value);
 
-      if (accumulator[transaction.to])
-        accumulator[transaction.to] += BigInt(transaction.value);
-      else accumulator[transaction.to] = BigInt(transaction.value);
+        if (accumulator[transaction.to])
+          accumulator[transaction.to] += BigInt(transaction.value);
+        else accumulator[transaction.to] = BigInt(transaction.value);
 
-      return accumulator;
-    }, {});
+        return accumulator;
+      },
+      {},
+    );
 
-    const hashMapAbs: Record<string, bigint> = Object.fromEntries(
+    const hashMapAbs = Object.fromEntries(
       Object.entries(hashMap).map(([key, value]) => [
         key,
-        BigInt(Math.abs(Number(value))),
+        value < 0n ? -value : value,
       ]),
     );
 
