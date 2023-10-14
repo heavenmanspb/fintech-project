@@ -1,0 +1,42 @@
+version: '3'
+services:
+  fintech-project:
+    image: fintech-service
+    container_name: fintech-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env.prod
+    depends_on:
+      fintech-db:
+        condition: service_healthy
+    networks:
+      - fintech-network
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+
+  fintech-db:
+    image: postgres:latest
+    container_name: fintech-db
+    volumes:
+      - $DATA_STORE:/var/lib/postgresql/data/
+    env_file:
+      - .env.prod
+    environment:
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    networks:
+      - fintech-network
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "$POSTGRES_DB", "-U", "$POSTGRES_USER" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - ${POSTGRES_PORT}:5432
+
+networks:
+  fintech-network:
+    driver: bridge
